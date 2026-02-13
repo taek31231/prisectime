@@ -78,23 +78,21 @@ if len(st.session_state.stations) == 3:
     from scipy.optimize import least_squares
     import math
 
-    # 목적 함수: 각 원의 방정식 오차를 계산합니다.
+    # 목적 함수 정의
     def residuals(p, stations):
         x, y = p
         res = []
         for s in stations:
-            # 위경도 -> 평면 근사 (1도당 거리 반영)
             sx, sy = s['lon'] * 88.8, s['lat'] * 111.0 
-            # 측정된 거리와 점 P 사이의 실제 거리 차이
             current_dist = math.sqrt((x - sx)**2 + (y - sy)**2)
             res.append(current_dist - s['dist'])
         return res
 
-    # 초기값 설정 (관측소들의 평균 위치를 시작점으로 지정)
+    # 초기값 계산
     avg_lon = sum(s['lon'] for s in st.session_state.stations) / 3 * 88.8
     avg_lat = sum(s['lat'] for s in st.session_state.stations) / 3 * 111.0
     
-    # least_squares를 사용하여 세 원의 오차가 가장 적은 교점을 찾음
+    # 최적화 실행
     result = least_squares(residuals, [avg_lon, avg_lat], args=(st.session_state.stations,))
     
     if result.success:
@@ -103,7 +101,6 @@ if len(st.session_state.stations) == 3:
         # 결과 지도 시각화
         res_map = folium.Map(location=[res_lat, res_lon], zoom_start=7)
         
-        # 1. 관측소 마커와 진원 거리 원 그리기
         for s in st.session_state.stations:
             folium.Marker([s['lat'], s['lon']], icon=folium.Icon(color='blue')).add_to(res_map)
             folium.Circle(
@@ -114,22 +111,19 @@ if len(st.session_state.stations) == 3:
                 fill_opacity=0.1
             ).add_to(res_map)
         
-        # 2. 계산된 진앙지 마커 (별 모양)
         folium.Marker(
             [res_lat, res_lon], 
-            popup=f"예측 진앙지\n(북위 {res_lat:.2f}, 경도 {res_lon:.2f})", 
+            popup=f"예측 진앙지", 
             icon=folium.Icon(color='red', icon='star')
         ).add_to(res_map)
 
+        # 주의: 여기서 괄호가 잘 닫혔는지 확인하세요!
         st_folium(res_map, width=900, height=500, key="result_map")
         
-        # 결과 텍스트 출력
         st.success(f"✅ 계산 완료! 예측 진앙 위치: 북위 {res_lat:.4f}°, 경도 {res_lon:.4f}°")
     else:
-        st.error("진앙지를 계산하는 데 실패했습니다. 입력값을 확인해 주세요.")
+        st.error("진앙지를 계산하는 데 실패했습니다.")
+
+# 이 else 문이 위 if len(...) == 3: 과 줄이 맞아야 합니다.
 else:
     st.info("지도에서 관측소 3곳을 모두 클릭해야 진앙 계산 결과가 나타납니다.")
-    st_folium(res_map, width=900, height=500, key="result_map")
-    st.success(f"계산된 진앙 위치: 북위 {res_lat:.4f}°, 경도 {res_lon:.4f}°")
-else:
-    st.warning("관측소 3곳을 모두 선택해야 진앙 계산이 시작됩니다.")
