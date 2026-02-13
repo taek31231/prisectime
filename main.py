@@ -13,7 +13,7 @@ st.markdown("""
 """)
 
 # 사이드바: 물리적 상수 설정
-st.sidebar.header("⚒️ 물리 상수 설정")
+st.sidebar.header("⚒️ 지진파 속도 설정")
 vp = st.sidebar.number_input("P파 속도 (km/s)", value=6.0)
 vs = st.sidebar.number_input("S파 속도 (km/s)", value=3.5)
 k_factor = (vp * vs) / (vp - vs)
